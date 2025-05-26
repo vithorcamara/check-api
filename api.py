@@ -10,15 +10,20 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), 'checklab-460319-2726e58f0b64.json')
 SPREADSHEET_NAME = "CheckLab"
 SCOPE = [
     'https://spreadsheets.google.com/feeds',
     'https://www.googleapis.com/auth/drive',
 ]
+GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS_JSON")
+if not GOOGLE_CREDENTIALS_JSON:
+    raise ValueError("Variável de ambiente GOOGLE_CREDENTIALS_JSON não está definida")
 
-creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, SCOPE)
+# Converte a string JSON da variável de ambiente para dicionário
+credentials_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, SCOPE)
 client = gspread.authorize(creds)
+
 
 def get_google_sheet_data():
     spreadsheet = client.open(SPREADSHEET_NAME)
@@ -92,6 +97,3 @@ def add_aluno():
 
     except Exception as e:
         return jsonify({"erro": "Falha ao salvar presença", "detalhes": str(e)}), 500
-
-if __name__ == "__main__":
-    app.run(port=5000,debug=True)
