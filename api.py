@@ -8,7 +8,7 @@ from flask_cors import CORS
 import json
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://checklab.vercel.app"])  # Permite CORS de qualquer origem
 
 SPREADSHEET_NAME = "CheckLab"
 SCOPE = [
