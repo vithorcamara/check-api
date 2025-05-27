@@ -66,7 +66,7 @@ def dados():
 def add_aluno():
     dados = request.json
 
-    campos_necessarios = ["ID", "Nome Social", "Matrícula", "IES", "Curso", "Turno", "E-mail", "Ticket", "Data"]
+    campos_necessarios = ["ID", "Nome Social", "Matrícula", "IES", "Curso", "Turno", "E-mail", "Ticket", "Data", "Usuário"]
     for campo in campos_necessarios:
         if campo not in dados:
             return jsonify({"erro": f"Campo '{campo}' é obrigatório"}), 400
@@ -89,6 +89,7 @@ def add_aluno():
             dados["E-mail"],
             dados["Ticket"],
             dados["Data"],
+            dados["Usuário"]
         ]
 
         worksheet.append_row(linha)
