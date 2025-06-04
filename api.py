@@ -11,7 +11,7 @@ import dotenv
 dotenv.load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["*"])  # Permite CORS de qualquer origem
+CORS(app, origins=["https://checklab.vercel.app"])  # Permite CORS de qualquer origem
 
 SPREADSHEET_NAME = "CheckLab"
 SCOPE = [
