@@ -4,11 +4,14 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import json
+import dotenv
+# Carrega as variáveis de ambiente do arquivo .env
+dotenv.load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://checklab.vercel.app"])  # Permite CORS de qualquer origem
+CORS(app, origins=["*"])  # Permite CORS de qualquer origem
 
 SPREADSHEET_NAME = "CheckLab"
 SCOPE = [
@@ -25,9 +28,17 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, SCOPE
 client = gspread.authorize(creds)
 
 
-def get_google_sheet_data():
+def get_google_sheet_data(pagina):
     spreadsheet = client.open(SPREADSHEET_NAME)
-    worksheets = spreadsheet.worksheets()[1:]  # exceto a primeira aba
+    if not spreadsheet:
+        raise ValueError(f"Planilha '{SPREADSHEET_NAME}' não encontrada.")
+    
+    if pagina == "dados":
+        worksheets = spreadsheet.worksheets()[1:]  # exceto a primeira aba
+    elif pagina == "resumo":
+        worksheets = [spreadsheet.worksheets()[0]]  # apenas a primeira aba
+    else:
+        raise ValueError("Parâmetro inválido para 'pagina'")
 
     dfs = []
     for sheet in worksheets:
@@ -42,10 +53,6 @@ def get_google_sheet_data():
     if dfs:
         final_df = pd.concat(dfs, ignore_index=True)
         final_df = final_df.sort_values(by=final_df.columns[0])
-        colunas_desejadas = [
-            "ID", "Nome Social", "Matrícula", "IES", "Curso", "Turno", "E-mail", "Ticket"
-        ]
-        final_df = final_df[colunas_desejadas]
         return final_df
     else:
         return pd.DataFrame()
@@ -55,7 +62,7 @@ def get_google_spreadsheet():
 
 @app.route("/dados", methods=["GET"])
 def dados():
-    df = get_google_sheet_data()
+    df = get_google_sheet_data("dados")
     if df.empty:
         return jsonify({"mensagem": "Nenhuma aba (exceto a primeira) contém dados."}), 404
     else:
@@ -98,3 +105,16 @@ def add_aluno():
 
     except Exception as e:
         return jsonify({"erro": "Falha ao salvar presença", "detalhes": str(e)}), 500
+
+@app.route("/resumo", methods=["GET"])
+@cross_origin()
+def resumo():
+    spreadsheet = get_google_spreadsheet()
+    worksheet = spreadsheet.get_worksheet(0)  # Primeira aba
+    data = worksheet.get_all_records()
+    if not data:
+        return jsonify({"mensagem": "Resumo vazio."}), 404
+
+    df = pd.DataFrame(data)
+    json_data = json.dumps(df.to_dict(orient="records"), ensure_ascii=False)
+    return Response(json_data, content_type='application/json; charset=utf-8')
