@@ -11,7 +11,7 @@ import dotenv
 dotenv.load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://checklab.vercel.app"])  # Permite CORS de qualquer origem
+CORS(app, origins=["*"])  # Permite CORS de qualquer origem
 
 SPREADSHEET_NAME = "CheckLab"
 SCOPE = [
@@ -73,7 +73,7 @@ def dados():
 def add_aluno():
     dados = request.json
 
-    campos_necessarios = ["ID", "Nome Social", "Matrícula", "IES", "Curso", "Turno", "E-mail", "Ticket", "Data", "Usuário"]
+    campos_necessarios = ["ID", "Nome Social", "CPF", "Matrícula", "IES", "Curso", "Turno", "E-mail", "Ticket", "Data", "Usuário"]
     for campo in campos_necessarios:
         if campo not in dados:
             return jsonify({"erro": f"Campo '{campo}' é obrigatório"}), 400
@@ -89,6 +89,7 @@ def add_aluno():
         linha = [
             dados["ID"],
             dados["Nome Social"],
+            dados["CPF"],
             dados["Matrícula"],
             dados["IES"],
             dados["Curso"],
@@ -118,3 +119,6 @@ def resumo():
     df = pd.DataFrame(data)
     json_data = json.dumps(df.to_dict(orient="records"), ensure_ascii=False)
     return Response(json_data, content_type='application/json; charset=utf-8')
+
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port=5000)
